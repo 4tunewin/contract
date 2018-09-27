@@ -108,6 +108,7 @@ contract Dice {
 
     // Events that are issued to make statistic recovery easier.
     event BetPlaced(
+        uint commit,
         address indexed gambler,
         uint amount,
         uint betMask,
@@ -271,7 +272,7 @@ contract Dice {
         bet.gambler = msg.sender;
 
         // Emit bet event
-        emit BetPlaced(bet.gambler, bet.amount, bet.mask, bet.modulo);
+        emit BetPlaced(commit, bet.gambler, bet.amount, bet.mask, bet.modulo);
     }
 
     // Settlement transaction - can in theory be issued by anyone, but is designed to be
