@@ -370,6 +370,8 @@ contract Dice {
     // BET_EXPIRATION_BLOCKS comment above for details). In case you ever find yourself
     // in a situation like this, just contact the dice2.win support, however nothing
     // precludes you from invoking this method yourself.
+    //
+    // TODO: regund for specific commit should be triggered only by contract owner or bet beneficiar
     function refundBet(uint commit) external {
         // Check that bet is in 'active' state.
         Bet storage bet = bets[commit];
