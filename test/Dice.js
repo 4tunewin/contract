@@ -230,7 +230,7 @@ contract('Dice', accounts => {
         });
     });
 
-    describe('bet', () => {
+    describe('make a bet', () => {
         beforeEach(async () => {
             reset = false;
 
