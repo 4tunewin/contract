@@ -9,4 +9,10 @@ module.exports = {
             network_id: '*', // match all networks id
         },
     },
+    solc: {
+        optimizer: {
+            enabled: true,
+            runs: 200,
+        },
+    },
 };
