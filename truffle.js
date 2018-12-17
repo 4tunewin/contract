@@ -1,3 +1,6 @@
+require('babel-core/register');
+require('babel-polyfill');
+
 const HDWalletProvider = require('truffle-hdwallet-provider');
 const LedgerWalletProvider = require('truffle-ledger-provider');
 const dotenv = require('dotenv');
