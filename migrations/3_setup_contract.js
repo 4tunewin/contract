@@ -1,10 +1,12 @@
 var Dice = artifacts.require('./Dice.sol');
 
-module.exports = function(deployer) {
-    // Setup dice contract
-    Dice.deployed().then(instance => {
-        // Set secret signer and max profit
-        instance.setSecretSigner(web3.eth.accounts[0]);
-        instance.setMaxProfit(web3.toWei(100, 'ether'));
-    });
+module.exports = async function(deployer) {
+    const instance = Dice.deployed();
+
+    // Set secret signer address
+    const accounts = await instance.getAccounts();
+    instance.setSecretSigner(accounts[0]);
+
+    // Set max profit
+    instance.setMaxProfit(web3.toWei(100, 'ether'));
 };
