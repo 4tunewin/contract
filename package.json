@@ -7,7 +7,7 @@
         "babel-preset-stage-0": "^6.24.1",
         "dotenv": "^6.2.0",
         "lodash": "^4.17.11",
-        "truffle-hdwallet-provider": "^0.0.6",
-        "truffle-ledger-provider": "^0.0.4"
+        "truffle-ledger-provider": "^0.0.4",
+        "truffle-privatekey-provider": "^1.0.0"
     }
 }

@@ -1,7 +1,7 @@
 require('babel-core/register');
 require('babel-polyfill');
 
-const HDWalletProvider = require('truffle-hdwallet-provider');
+const PrivateKeyProvider = require('truffle-privatekey-provider');
 const LedgerWalletProvider = require('truffle-ledger-provider');
 const dotenv = require('dotenv');
 
@@ -19,18 +19,16 @@ module.exports = {
             network_id: '*', // match all networks id
         },
         // Proof-of-authority test network.
-        // https://www.rinkeby.io/
-        rinkeby: {
+        // https://kovan.etherscan.io/
+        kovan: {
             provider: () => {
-                return new HDWalletProvider(
-                    process.env.MNEMONIC,
-                    `https://rinkeby.infura.io/v3/${
-                        process.env.INFURA_API_KEY
-                    }`,
+                return new PrivateKeyProvider(
+                    process.env.WEB3_PRIVATE_KEY,
+                    'http://kovan.4tune.win:9545',
                 );
             },
             gasPrice: 25000000000,
-            network_id: 4,
+            network_id: 42,
         },
         // Main ethereum network
         production: {
@@ -43,9 +41,7 @@ module.exports = {
                         accountsLength: 1,
                         accountsOffset: 0,
                     },
-                    `https://rinkeby.infura.io/v3/${
-                        process.env.INFURA_API_KEY
-                    }`,
+                    'http://frontier.4tune.win:8545',
                 );
             },
             gasPrice: 25000000000,
