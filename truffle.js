@@ -24,11 +24,23 @@ module.exports = {
             provider: () => {
                 return new PrivateKeyProvider(
                     process.env.WEB3_PRIVATE_KEY,
-                    'http://kovan.4tune.win:9545',
+                    'https://kovan.infura.io/v3/1f972bfec78a47be89e68ca2dd70065c',
                 );
             },
             gasPrice: 25000000000,
             network_id: 42,
+        },
+        // Proof-of-authority test network.
+        // https://www.rinkeby.io/
+        rinkeby: {
+            provider: () => {
+                return new PrivateKeyProvider(
+                    process.env.WEB3_PRIVATE_KEY,
+                    `https://rinkeby.infura.io/v3/1f972bfec78a47be89e68ca2dd70065c`,
+                );
+            },
+            gasPrice: 25000000000,
+            network_id: 4,
         },
         // Main ethereum network
         production: {
