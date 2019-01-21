@@ -1,5 +1,6 @@
-const Dice = artifacts.require('./Dice.sol');
 const lodash = require('lodash');
+const crypto = require('crypto');
+const Dice = artifacts.require('./Dice.sol');
 
 contract('Dice', accounts => {
     const dummySecretSigner = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -8,18 +9,12 @@ contract('Dice', accounts => {
     const secretSigner = accounts[1];
     const gambler = accounts[2];
 
-    let diceInstance;
-
-    let reset = true;
-    beforeEach(async () => {
-        if (reset) {
-            diceInstance = await Dice.new();
-        }
-
-        reset = true;
-    });
-
     describe('game attributes', () => {
+        let diceInstance;
+        beforeEach(async () => {
+            diceInstance = await Dice.new();
+        });
+
         it('has the address', () => {
             const address = diceInstance.address;
             assert.notEqual(address, '0x0', 'has contract address');
@@ -42,6 +37,11 @@ contract('Dice', accounts => {
     });
 
     describe('changes attributes', () => {
+        let diceInstance;
+        beforeEach(async () => {
+            diceInstance = await Dice.new();
+        });
+
         it('set secret signer address', async () => {
             await diceInstance
                 .setSecretSigner(secretSigner)
@@ -167,6 +167,11 @@ contract('Dice', accounts => {
     });
 
     describe('withdraw funds', () => {
+        let diceInstance;
+        beforeEach(async () => {
+            diceInstance = await Dice.new();
+        });
+
         it('should fail to withdraw more then current balance', async () => {
             const withdrawAddress = accounts[2];
 
@@ -231,12 +236,14 @@ contract('Dice', accounts => {
     });
 
     describe('make a bet', () => {
-        beforeEach(async () => {
-            reset = false;
+        let diceInstance;
+        const secret = 1;
+
+        before(async () => {
+            diceInstance = await Dice.new();
 
             // Set secret signer address
             await diceInstance.setSecretSigner(secretSigner);
-
             // Set max profit value
             await diceInstance.setMaxProfit(web3.toWei(200000, 'ether'));
         });
@@ -244,7 +251,7 @@ contract('Dice', accounts => {
         it('should place a bet', async () => {
             const commitLastBlock = web3.eth.blockNumber + 200;
             const packedCommit =
-                '0x' + lodash.padStart((1).toString(16), 64, 0);
+                '0x' + lodash.padStart(secret.toString(16), 64, 0);
             const commit = web3.sha3(packedCommit, {
                 encoding: 'hex',
             });
@@ -304,8 +311,7 @@ contract('Dice', accounts => {
         });
 
         it('settle bet', async () => {
-            const commit = 1;
-            await diceInstance.settleBet(commit, 0).then(receipt => {
+            await diceInstance.settleBet(secret, 0).then(receipt => {
                 assert.equal(receipt.logs.length, 1, 'triggers one event');
                 assert.equal(
                     receipt.logs[0].event,
@@ -322,6 +328,11 @@ contract('Dice', accounts => {
     });
 
     describe('destroy contract', () => {
+        let diceInstance;
+        before(async () => {
+            diceInstance = await Dice.new();
+        });
+
         it('should fail if called not by owner', async () => {
             await diceInstance
                 .kill({ from: nextOwner })
@@ -335,31 +346,111 @@ contract('Dice', accounts => {
         });
 
         it('should successfully destroy the contract', async () => {
-            const ownerBalance = await web3.eth.getBalance(owner);
-            const contractBalance = await web3.eth.getBalance(
-                diceInstance.address,
-            );
+            await diceInstance.send(web3.toWei(1, 'ether'), {
+                from: owner,
+            });
+            const beforeOwnerBalance = await web3.eth.getBalance(owner);
 
-            diceInstance
+            await diceInstance
                 .kill({ from: owner })
                 .then(() => {
                     return web3.eth.getBalance(diceInstance.address);
                 })
-                .then(balance => {
+                .then(contractBalance => {
                     assert.equal(
-                        balance.toNumber(),
+                        contractBalance.toNumber(),
                         0,
                         'has to withdraw all funds',
                     );
                     return web3.eth.getBalance(owner);
                 })
-                .then(balance => {
-                    assert.equal(
-                        ownerBalance.toNumber() + contractBalance.toNumber(),
-                        balance.toNumber(),
+                .then(afterOwnerBalance => {
+                    assert.isTrue(
+                        afterOwnerBalance.gt(beforeOwnerBalance),
                         'all funds from contract should be transfered to owner address',
                     );
                 });
+        });
+    });
+
+    describe('load test', () => {
+        let diceInstance;
+        let cleanup = 0;
+
+        before(async () => {
+            diceInstance = await Dice.new();
+
+            // Set secret signer address
+            await diceInstance.setSecretSigner(secretSigner);
+            // Set max profit value
+            await diceInstance.setMaxProfit(web3.toWei(200000, 'ether'));
+
+            // Send some ether to the contract
+            await diceInstance.send(web3.toWei(5, 'ether'), {
+                from: owner,
+            });
+        });
+
+        it('playing 100 games', async function() {
+            // disable timeout
+            this.timeout(0);
+
+            for (let i = 1; i <= 100; i++) {
+                console.log(`      ✓ Game ${i} out of 100`);
+
+                const secret = '0x' + crypto.randomBytes(32).toString('hex');
+                const commitLastBlock = web3.eth.blockNumber + 200;
+                const commit = web3.sha3(secret, {
+                    encoding: 'hex',
+                });
+
+                const packed = [
+                    '0x',
+                    lodash.padStart(commitLastBlock.toString(16), 10, 0),
+                    commit.substr(2),
+                ].join('');
+
+                const hash = web3.sha3(packed, {
+                    encoding: 'hex',
+                });
+                const commitSignature = web3.eth.sign(secretSigner, hash, {
+                    from: secretSigner,
+                });
+
+                const r = '0x' + commitSignature.substr(2, 64);
+                const s = '0x' + commitSignature.substr(66, 64);
+                const v = parseInt(commitSignature.substr(130, 2)) + 27;
+
+                await diceInstance
+                    .placeBet(1, 6, commitLastBlock, commit, v, r, s, {
+                        from: gambler,
+                        value: web3.toWei(0.1, 'ether'),
+                    })
+                    .then(receipt => {
+                        assert.equal(
+                            receipt.logs[0].event,
+                            'BetPlaced',
+                            'should be "BetPlaced" event',
+                        );
+                    });
+
+                await diceInstance
+                    .settleBet(secret, cleanup, {
+                        from: secretSigner,
+                    })
+                    .then(receipt => {
+                        cleanup = commit;
+                        assert.equal(
+                            receipt.logs[0].event,
+                            'Payment',
+                            'should be "Payment" event',
+                        );
+                    });
+            }
+
+            await diceInstance.lockedInBets().then(amount => {
+                assert.equal(amount, 0, 'should has 0 locked bets');
+            });
         });
     });
 });
