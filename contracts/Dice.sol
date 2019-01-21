@@ -202,9 +202,6 @@ contract Dice {
         bytes32 signatureHash = keccak256(abi.encodePacked(prefix, hash));
 
         return secretSigner == ecrecover(signatureHash, v, r, s);
-
-        // bytes32 signatureHash = keccak256(abi.encodePacked(uint40(commitLastBlock), commit));
-        // return secretSigner == ecrecover(signatureHash, v, r, s);
     }
 
     /// *** Betting logic
@@ -285,9 +282,6 @@ contract Dice {
         // Check whether contract has enough funds to process this bet.
         require (jackpotSize + lockedInBets <= address(this).balance, "Cannot afford to lose this bet.");
 
-        // Record bet in logs.
-        emit BetPlaced(commit, bet.gambler, bet.amount, bet.mask, bet.modulo);
-
         // Store bet parameters on blockchain.
         bet.amount = amount;
         bet.modulo = uint8(modulo);
@@ -295,6 +289,9 @@ contract Dice {
         bet.placeBlockNumber = uint40(block.number);
         bet.mask = uint40(mask);
         bet.gambler = msg.sender;
+
+        // Record bet in logs.
+        emit BetPlaced(commit, bet.gambler, bet.amount, bet.mask, bet.modulo);
     }
 
     // This is the method used to settle 99% of bets. To process a bet with a specific

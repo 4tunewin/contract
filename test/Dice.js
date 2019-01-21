@@ -7,6 +7,7 @@ contract('Dice', accounts => {
     const owner = accounts[0];
     const nextOwner = accounts[1];
     const secretSigner = accounts[1];
+    const croupier = accounts[1];
     const gambler = accounts[2];
 
     describe('game attributes', () => {
@@ -238,13 +239,13 @@ contract('Dice', accounts => {
     describe('make a bet', () => {
         let diceInstance;
         const secret = 1;
+        let blockHash = null;
 
         before(async () => {
             diceInstance = await Dice.new();
 
-            // Set secret signer address
             await diceInstance.setSecretSigner(secretSigner);
-            // Set max profit value
+            await diceInstance.setCroupier(croupier);
             await diceInstance.setMaxProfit(web3.toWei(200000, 'ether'));
         });
 
@@ -280,30 +281,32 @@ contract('Dice', accounts => {
                     from: gambler,
                     value: web3.toWei(0.1, 'ether'),
                 })
-                .then(receipt => {
-                    assert.equal(receipt.logs.length, 1, 'triggers one event');
+                .then(result => {
+                    blockHash = result.receipt.blockHash;
+
+                    assert.equal(result.logs.length, 1, 'triggers one event');
                     assert.equal(
-                        receipt.logs[0].event,
+                        result.logs[0].event,
                         'BetPlaced',
                         'should be "BetPlaced" event',
                     );
                     assert.equal(
-                        receipt.logs[0].args.gambler,
+                        result.logs[0].args.gambler,
                         gambler,
                         'logs the account the bet is placed from',
                     );
                     assert.equal(
-                        receipt.logs[0].args.amount.toNumber(),
+                        result.logs[0].args.amount.toNumber(),
                         web3.toWei(0.1),
                         'logs the amount placed on the bet',
                     );
                     assert.equal(
-                        receipt.logs[0].args.betMask.toNumber(),
+                        result.logs[0].args.betMask.toNumber(),
                         1,
                         'logs the bet mask',
                     );
                     assert.equal(
-                        receipt.logs[0].args.modulo.toNumber(),
+                        result.logs[0].args.modulo.toNumber(),
                         6,
                         'logs the modulo',
                     );
@@ -311,19 +314,21 @@ contract('Dice', accounts => {
         });
 
         it('settle bet', async () => {
-            await diceInstance.settleBet(secret, 0).then(receipt => {
-                assert.equal(receipt.logs.length, 1, 'triggers one event');
-                assert.equal(
-                    receipt.logs[0].event,
-                    'Payment',
-                    'should be "Payment" event',
-                );
-                assert.equal(
-                    receipt.logs[0].args.beneficiary,
-                    gambler,
-                    'logs the beneficiary address the payment is transfered to',
-                );
-            });
+            await diceInstance
+                .settleBet(secret, blockHash, { from: croupier })
+                .then(result => {
+                    assert.equal(result.logs.length, 1, 'triggers one event');
+                    assert.equal(
+                        result.logs[0].event,
+                        'Payment',
+                        'should be "Payment" event',
+                    );
+                    assert.equal(
+                        result.logs[0].args.beneficiary,
+                        gambler,
+                        'logs the beneficiary address the payment is transfered to',
+                    );
+                });
         });
     });
 
@@ -375,15 +380,14 @@ contract('Dice', accounts => {
 
     describe('load test', () => {
         let diceInstance;
-        let cleanup = 0;
+        let blockHash = 0;
 
         before(async () => {
             diceInstance = await Dice.new();
 
-            // Set secret signer address
             await diceInstance.setSecretSigner(secretSigner);
-            // Set max profit value
             await diceInstance.setMaxProfit(web3.toWei(200000, 'ether'));
+            await diceInstance.setCroupier(croupier);
 
             // Send some ether to the contract
             await diceInstance.send(web3.toWei(5, 'ether'), {
@@ -426,22 +430,21 @@ contract('Dice', accounts => {
                         from: gambler,
                         value: web3.toWei(0.1, 'ether'),
                     })
-                    .then(receipt => {
+                    .then(result => {
+                        blockHash = result.receipt.blockHash;
+
                         assert.equal(
-                            receipt.logs[0].event,
+                            result.logs[0].event,
                             'BetPlaced',
                             'should be "BetPlaced" event',
                         );
                     });
 
                 await diceInstance
-                    .settleBet(secret, cleanup, {
-                        from: secretSigner,
-                    })
-                    .then(receipt => {
-                        cleanup = commit;
+                    .settleBet(secret, blockHash, { from: croupier })
+                    .then(result => {
                         assert.equal(
-                            receipt.logs[0].event,
+                            result.logs[0].event,
                             'Payment',
                             'should be "Payment" event',
                         );
