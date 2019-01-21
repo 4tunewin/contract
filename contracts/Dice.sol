@@ -202,9 +202,6 @@ contract Dice {
         bytes32 signatureHash = keccak256(abi.encodePacked(prefix, hash));
 
         return secretSigner == ecrecover(signatureHash, v, r, s);
-
-        // bytes32 signatureHash = keccak256(abi.encodePacked(uint40(commitLastBlock), commit));
-        // return secretSigner == ecrecover(signatureHash, v, r, s);
     }
 
     /// *** Betting logic
