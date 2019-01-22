@@ -426,10 +426,19 @@ contract('Dice', accounts => {
                 const v = parseInt(commitSignature.substr(130, 2)) + 27;
 
                 await diceInstance
-                    .placeBet(1, 6, commitLastBlock, commit, v, r, s, {
-                        from: gambler,
-                        value: web3.toWei(0.1, 'ether'),
-                    })
+                    .placeBet(
+                        (i % 6) + 1,
+                        6,
+                        commitLastBlock,
+                        commit,
+                        v,
+                        r,
+                        s,
+                        {
+                            from: gambler,
+                            value: web3.toWei(0.1, 'ether'),
+                        },
+                    )
                     .then(result => {
                         blockHash = result.receipt.blockHash;
 
