@@ -53,10 +53,10 @@ module.exports = {
                         accountsLength: 1,
                         accountsOffset: 0,
                     },
-                    'http://frontier.4tune.win:8545',
+                    'https://mainnet.infura.io/v3/1f972bfec78a47be89e68ca2dd70065c',
                 );
             },
-            gasPrice: 25000000000,
+            gasPrice: 10000000000,
             network_id: 1,
         },
     },
