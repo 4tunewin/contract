@@ -24,7 +24,7 @@ module.exports = {
             provider: () => {
                 return new PrivateKeyProvider(
                     process.env.WEB3_PRIVATE_KEY,
-                    'https://kovan.infura.io/v3/1f972bfec78a47be89e68ca2dd70065c',
+                    'https://kovan.infura.io/v3/<SECRET_KEY>',
                 );
             },
             gasPrice: 25000000000,
@@ -36,7 +36,7 @@ module.exports = {
             provider: () => {
                 return new PrivateKeyProvider(
                     process.env.WEB3_PRIVATE_KEY,
-                    `https://rinkeby.infura.io/v3/1f972bfec78a47be89e68ca2dd70065c`,
+                    `https://rinkeby.infura.io/v3/<SECRET_KEY>`,
                 );
             },
             gasPrice: 25000000000,
@@ -53,7 +53,7 @@ module.exports = {
                         accountsLength: 1,
                         accountsOffset: 0,
                     },
-                    'https://mainnet.infura.io/v3/1f972bfec78a47be89e68ca2dd70065c',
+                    'https://mainnet.infura.io/v3/<SECRET_KEY>',
                 );
             },
             gasPrice: 10000000000,
